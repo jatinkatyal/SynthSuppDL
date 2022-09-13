@@ -1,0 +1,9 @@
+tracking_wo_bnw/*
+CenterTrack/*
+deep-person-reid/*
+models/*
+src/utils/coco_eval.py
+src/utils/coco_utils.py
+src/utils/engine.py
+src/utils/utils.py
+src/utils/transforms.py
