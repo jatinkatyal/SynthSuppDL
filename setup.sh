@@ -1,6 +1,14 @@
 #!/bin/bash
 
 files=$(ls)
+# TrackEval
+if [[ "$files" == *"TrackEval"* ]]; then
+    echo "TrackEval: already present, no download required"
+else
+    echo "TrackEval: download required, cloning now"
+    git clone https://github.com/JonathonLuiten/TrackEval.git
+fi
+
 
 # Tracktor
 if [[ "$files" == *"tracking_wo_bnw"* ]]; then
@@ -8,11 +16,6 @@ if [[ "$files" == *"tracking_wo_bnw"* ]]; then
 else
     echo "tracking_wo_bnw: download required, cloning now"
     git clone https://github.com/phil-bergmann/tracking_wo_bnw.git
-    cp tracking_wo_bnw/src/obj_det/utils.py src/utils/utils.py
-    cp tracking_wo_bnw/src/obj_det/engine.py src/utils/engine.py
-    cp tracking_wo_bnw/src/obj_det/transforms.py src/utils/transforms.py
-    cp tracking_wo_bnw/src/obj_det/coco_utils.py src/utils/coco_utils.py
-    cp tracking_wo_bnw/src/obj_det/coco_eval.py src/utils/coco_eval.py
 fi
 
 # deep-person-reid
@@ -34,3 +37,4 @@ else
     echo "CenterTrack: download required, cloning now"
     git clone https://github.com/xingyizhou/CenterTrack.git
 fi
+
