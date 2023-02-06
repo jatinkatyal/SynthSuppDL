@@ -10,6 +10,8 @@ argsparser.add_argument('--data', help='path to real data', default=None)
 argsparser.add_argument('--syndata', help='path to synthetic data', default=None)
 argsparser.add_argument('--model', help='path to model weights', default=None)
 argsparser.add_argument('--mode', help='how to use real and synthetic datasets', default=None)
+argsparser.add_argument('--dataset_class', help='type of dataset to choose (UAVDT,  VisDrone etc.)', default=None)
+
 args = argsparser.parse_args()
 
 
@@ -47,6 +49,7 @@ class UAVDTReIdTrain(torchreid.data.ImageDataset):
                     entry = [img_path, objind, seqs.index(seq)]
                     gallery.append(entry)
                     imgs.pop(g)
+
 
                 for img in imgs:
                     img_path = os.path.join(self.dataset_dir,seq,obj,img)
@@ -2042,7 +2045,6 @@ class VisDroneTrain25e(torchreid.data.ImageDataset):
                 objind += 1
         super(VisDroneTrain25e, self).__init__(train, query, gallery, **kwargs)
 
-
 class VisDroneTrain25f(torchreid.data.ImageDataset):
     # dataset_dir = '/home/jatin/HDD2TB/datasets/UAVDT_reid'
     dataset_dir = args.data
@@ -2096,6 +2098,60 @@ class VisDroneTrain25f(torchreid.data.ImageDataset):
                     train.append(entry)
                 objind += 1
         super(VisDroneTrain25f, self).__init__(train, query, gallery, **kwargs)
+
+class VisDroneTrain30(torchreid.data.ImageDataset):
+    # dataset_dir = '/home/jatin/HDD2TB/datasets/UAVDT_reid'
+    dataset_dir = args.data
+
+    def __init__(self, root='', mode='train', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        # Train
+        print('Skipping some real sequences to balance the total number of samples')
+        seqs = [
+            'uav0000124_00944_v', 'uav0000126_00001_v', 'uav0000140_01590_v', 'uav0000143_02250_v', 'uav0000145_00000_v',
+            'uav0000218_00001_v', 'uav0000222_03150_v', 'uav0000239_03720_v', 'uav0000239_12336_v',
+            'uav0000243_00001_v',
+            'uav0000244_01440_v', 'uav0000248_00001_v', 'uav0000263_03289_v', 'uav0000264_02760_v',
+            'uav0000270_00001_v',
+            'uav0000273_00001_v', 'uav0000278_00001_v', 'uav0000279_00001_v', 'uav0000281_00460_v',
+            'uav0000289_00001_v',
+            'uav0000289_06922_v', 'uav0000295_02300_v', 'uav0000307_00000_v', 'uav0000315_00000_v',
+            'uav0000323_01173_v',  # 'uav0000300_00000_v', excluded for less cars to other ratio
+            'uav0000326_01035_v', 'uav0000342_04692_v', 'uav0000352_05980_v', 'uav0000361_02323_v',
+            'uav0000366_00001_v'
+        ]
+        seqs.sort()
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(VisDroneTrain30, self).__init__(train, query, gallery, **kwargs)
 
 class AirSimReIdTrain5a(torchreid.data.ImageDataset):
     #dataset_dir = '/home/jatin/HDD2TB/datasets/Synthetic/AirSim-UAV-Synth/reid-data'
@@ -2539,6 +2595,3072 @@ class UAVDTReIdTest(torchreid.data.ImageDataset):
                 objind += 1
         super(UAVDTReIdTest, self).__init__(train, query, gallery, **kwargs)
 
+class VisDroneReIdTest(torchreid.data.ImageDataset):
+    #dataset_dir = '/home/jatin/HDD2TB/datasets/UAVDT_reid'
+    dataset_dir = args.data
+
+    def __init__(self, root='', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        # Test
+        seqs = ['uav0000268_05773_v','uav0000305_00000_v']
+        seqs.sort()
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    random.seed(0)
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(VisDroneReIdTest, self).__init__(train, query, gallery, **kwargs)
+
+class VisDroneTrain5a(torchreid.data.ImageDataset):
+    # dataset_dir = '/home/jatin/HDD2TB/datasets/UAVDT_reid'
+    dataset_dir = args.data
+
+    def __init__(self, root='', mode='train', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        # Train
+        print('Skipping some real sequences to balance the total number of samples')
+        seqs = ['uav0000124_00944_v', 'uav0000126_00001_v', 'uav0000140_01590_v', 'uav0000143_02250_v',
+                'uav0000145_00000_v',
+                # 'uav0000218_00001_v', 'uav0000222_03150_v', 'uav0000239_03720_v', 'uav0000239_12336_v', 'uav0000243_00001_v',
+                # 'uav0000244_01440_v', 'uav0000248_00001_v', 'uav0000263_03289_v', 'uav0000264_02760_v', 'uav0000270_00001_v',
+                # 'uav0000273_00001_v', 'uav0000278_00001_v', 'uav0000279_00001_v', 'uav0000281_00460_v', 'uav0000289_00001_v',
+                # 'uav0000289_06922_v', 'uav0000295_02300_v', 'uav0000307_00000_v', 'uav0000315_00000_v', 'uav0000323_01173_v', #'uav0000300_00000_v', excluded for less cars to other ratio
+                # 'uav0000326_01035_v', 'uav0000342_04692_v', 'uav0000352_05980_v', 'uav0000361_02323_v', 'uav0000366_00001_v'
+                ]
+        seqs.sort()
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(VisDroneTrain5a, self).__init__(train, query, gallery, **kwargs)
+
+class VisDroneTrain5b(torchreid.data.ImageDataset):
+    # dataset_dir = '/home/jatin/HDD2TB/datasets/UAVDT_reid'
+    dataset_dir = args.data
+
+    def __init__(self, root='', mode='train', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        # Train
+        print('Skipping some real sequences to balance the total number of samples')
+        seqs = [
+            # 'uav0000124_00944_v', 'uav0000126_00001_v', 'uav0000140_01590_v', 'uav0000143_02250_v', 'uav0000145_00000_v',
+            'uav0000218_00001_v', 'uav0000222_03150_v', 'uav0000239_03720_v', 'uav0000239_12336_v',
+            'uav0000243_00001_v',
+            # 'uav0000244_01440_v', 'uav0000248_00001_v', 'uav0000263_03289_v', 'uav0000264_02760_v', 'uav0000270_00001_v',
+            # 'uav0000273_00001_v', 'uav0000278_00001_v', 'uav0000279_00001_v', 'uav0000281_00460_v', 'uav0000289_00001_v',
+            # 'uav0000289_06922_v', 'uav0000295_02300_v', 'uav0000307_00000_v', 'uav0000315_00000_v', 'uav0000323_01173_v', #'uav0000300_00000_v', excluded for less cars to other ratio
+            # 'uav0000326_01035_v', 'uav0000342_04692_v', 'uav0000352_05980_v', 'uav0000361_02323_v', 'uav0000366_00001_v'
+        ]
+        seqs.sort()
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(VisDroneTrain5b, self).__init__(train, query, gallery, **kwargs)
+
+
+class VisDroneTrain5c(torchreid.data.ImageDataset):
+    # dataset_dir = '/home/jatin/HDD2TB/datasets/UAVDT_reid'
+    dataset_dir = args.data
+
+    def __init__(self, root='', mode='train', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        # Train
+        print('Skipping some real sequences to balance the total number of samples')
+        seqs = [
+            # 'uav0000124_00944_v', 'uav0000126_00001_v', 'uav0000140_01590_v', 'uav0000143_02250_v', 'uav0000145_00000_v',
+            # 'uav0000218_00001_v', 'uav0000222_03150_v', 'uav0000239_03720_v', 'uav0000239_12336_v', 'uav0000243_00001_v',
+            'uav0000244_01440_v', 'uav0000248_00001_v', 'uav0000263_03289_v', 'uav0000264_02760_v',
+            'uav0000270_00001_v',
+            # 'uav0000273_00001_v', 'uav0000278_00001_v', 'uav0000279_00001_v', 'uav0000281_00460_v', 'uav0000289_00001_v',
+            # 'uav0000289_06922_v', 'uav0000295_02300_v', 'uav0000307_00000_v', 'uav0000315_00000_v', 'uav0000323_01173_v', #'uav0000300_00000_v', excluded for less cars to other ratio
+            # 'uav0000326_01035_v', 'uav0000342_04692_v', 'uav0000352_05980_v', 'uav0000361_02323_v', 'uav0000366_00001_v'
+        ]
+        seqs.sort()
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(VisDroneTrain5c, self).__init__(train, query, gallery, **kwargs)
+
+
+class VisDroneTrain5d(torchreid.data.ImageDataset):
+    # dataset_dir = '/home/jatin/HDD2TB/datasets/UAVDT_reid'
+    dataset_dir = args.data
+
+    def __init__(self, root='', mode='train', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        # Train
+        print('Skipping some real sequences to balance the total number of samples')
+        seqs = [
+            # 'uav0000124_00944_v', 'uav0000126_00001_v', 'uav0000140_01590_v', 'uav0000143_02250_v', 'uav0000145_00000_v',
+            # 'uav0000218_00001_v', 'uav0000222_03150_v', 'uav0000239_03720_v', 'uav0000239_12336_v', 'uav0000243_00001_v',
+            # 'uav0000244_01440_v', 'uav0000248_00001_v', 'uav0000263_03289_v', 'uav0000264_02760_v', 'uav0000270_00001_v',
+            'uav0000273_00001_v', 'uav0000278_00001_v', 'uav0000279_00001_v', 'uav0000281_00460_v',
+            'uav0000289_00001_v',
+            # 'uav0000289_06922_v', 'uav0000295_02300_v', 'uav0000307_00000_v', 'uav0000315_00000_v', 'uav0000323_01173_v', #'uav0000300_00000_v', excluded for less cars to other ratio
+            # 'uav0000326_01035_v', 'uav0000342_04692_v', 'uav0000352_05980_v', 'uav0000361_02323_v', 'uav0000366_00001_v'
+        ]
+        seqs.sort()
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(VisDroneTrain5d, self).__init__(train, query, gallery, **kwargs)
+
+
+class VisDroneTrain5e(torchreid.data.ImageDataset):
+    # dataset_dir = '/home/jatin/HDD2TB/datasets/UAVDT_reid'
+    dataset_dir = args.data
+
+    def __init__(self, root='', mode='train', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        # Train
+        print('Skipping some real sequences to balance the total number of samples')
+        seqs = [
+            # 'uav0000124_00944_v', 'uav0000126_00001_v', 'uav0000140_01590_v', 'uav0000143_02250_v', 'uav0000145_00000_v',
+            # 'uav0000218_00001_v', 'uav0000222_03150_v', 'uav0000239_03720_v', 'uav0000239_12336_v', 'uav0000243_00001_v',
+            # 'uav0000244_01440_v', 'uav0000248_00001_v', 'uav0000263_03289_v', 'uav0000264_02760_v', 'uav0000270_00001_v',
+            # 'uav0000273_00001_v', 'uav0000278_00001_v', 'uav0000279_00001_v', 'uav0000281_00460_v', 'uav0000289_00001_v',
+            'uav0000289_06922_v', 'uav0000295_02300_v', 'uav0000307_00000_v', 'uav0000315_00000_v',
+            'uav0000323_01173_v',  # 'uav0000300_00000_v', excluded for less cars to other ratio
+            # 'uav0000326_01035_v', 'uav0000342_04692_v', 'uav0000352_05980_v', 'uav0000361_02323_v', 'uav0000366_00001_v'
+        ]
+        seqs.sort()
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(VisDroneTrain5e, self).__init__(train, query, gallery, **kwargs)
+
+
+class VisDroneTrain5f(torchreid.data.ImageDataset):
+    # dataset_dir = '/home/jatin/HDD2TB/datasets/UAVDT_reid'
+    dataset_dir = args.data
+
+    def __init__(self, root='', mode='train', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        # Train
+        print('Skipping some real sequences to balance the total number of samples')
+        seqs = [
+            # 'uav0000124_00944_v', 'uav0000126_00001_v', 'uav0000140_01590_v', 'uav0000143_02250_v', 'uav0000145_00000_v',
+            # 'uav0000218_00001_v', 'uav0000222_03150_v', 'uav0000239_03720_v', 'uav0000239_12336_v', 'uav0000243_00001_v',
+            # 'uav0000244_01440_v', 'uav0000248_00001_v', 'uav0000263_03289_v', 'uav0000264_02760_v', 'uav0000270_00001_v',
+            # 'uav0000273_00001_v', 'uav0000278_00001_v', 'uav0000279_00001_v', 'uav0000281_00460_v', 'uav0000289_00001_v',
+            # 'uav0000289_06922_v', 'uav0000295_02300_v', 'uav0000307_00000_v', 'uav0000315_00000_v', 'uav0000323_01173_v', #'uav0000300_00000_v', excluded for less cars to other ratio
+            'uav0000326_01035_v', 'uav0000342_04692_v', 'uav0000352_05980_v', 'uav0000361_02323_v',
+            'uav0000366_00001_v'
+        ]
+        seqs.sort()
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(VisDroneTrain5f, self).__init__(train, query, gallery, **kwargs)
+
+
+class VisDroneTrain10a(torchreid.data.ImageDataset):
+    # dataset_dir = '/home/jatin/HDD2TB/datasets/UAVDT_reid'
+    dataset_dir = args.data
+
+    def __init__(self, root='', mode='train', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        # Train
+        print('Skipping some real sequences to balance the total number of samples')
+        seqs = ['uav0000124_00944_v', 'uav0000126_00001_v', 'uav0000140_01590_v', 'uav0000143_02250_v',
+                'uav0000145_00000_v',
+                'uav0000218_00001_v', 'uav0000222_03150_v', 'uav0000239_03720_v', 'uav0000239_12336_v',
+                'uav0000243_00001_v',
+                # 'uav0000244_01440_v', 'uav0000248_00001_v', 'uav0000263_03289_v', 'uav0000264_02760_v', 'uav0000270_00001_v',
+                # 'uav0000273_00001_v', 'uav0000278_00001_v', 'uav0000279_00001_v', 'uav0000281_00460_v', 'uav0000289_00001_v',
+                # 'uav0000289_06922_v', 'uav0000295_02300_v', 'uav0000307_00000_v', 'uav0000315_00000_v', 'uav0000323_01173_v', #'uav0000300_00000_v', excluded for less cars to other ratio
+                # 'uav0000326_01035_v', 'uav0000342_04692_v', 'uav0000352_05980_v', 'uav0000361_02323_v', 'uav0000366_00001_v'
+                ]
+        seqs.sort()
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(VisDroneTrain10a, self).__init__(train, query, gallery, **kwargs)
+
+
+class VisDroneTrain10b(torchreid.data.ImageDataset):
+    # dataset_dir = '/home/jatin/HDD2TB/datasets/UAVDT_reid'
+    dataset_dir = args.data
+
+    def __init__(self, root='', mode='train', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        # Train
+        print('Skipping some real sequences to balance the total number of samples')
+        seqs = [
+            # 'uav0000124_00944_v', 'uav0000126_00001_v', 'uav0000140_01590_v', 'uav0000143_02250_v', 'uav0000145_00000_v',
+            # 'uav0000218_00001_v', 'uav0000222_03150_v', 'uav0000239_03720_v', 'uav0000239_12336_v', 'uav0000243_00001_v',
+            'uav0000244_01440_v', 'uav0000248_00001_v', 'uav0000263_03289_v', 'uav0000264_02760_v',
+            'uav0000270_00001_v',
+            'uav0000273_00001_v', 'uav0000278_00001_v', 'uav0000279_00001_v', 'uav0000281_00460_v',
+            'uav0000289_00001_v',
+            # 'uav0000289_06922_v', 'uav0000295_02300_v', 'uav0000307_00000_v', 'uav0000315_00000_v', 'uav0000323_01173_v', #'uav0000300_00000_v', excluded for less cars to other ratio
+            # 'uav0000326_01035_v', 'uav0000342_04692_v', 'uav0000352_05980_v', 'uav0000361_02323_v', 'uav0000366_00001_v'
+        ]
+        seqs.sort()
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(VisDroneTrain10b, self).__init__(train, query, gallery, **kwargs)
+
+
+class VisDroneTrain10c(torchreid.data.ImageDataset):
+    # dataset_dir = '/home/jatin/HDD2TB/datasets/UAVDT_reid'
+    dataset_dir = args.data
+
+    def __init__(self, root='', mode='train', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        # Train
+        print('Skipping some real sequences to balance the total number of samples')
+        seqs = [
+            # 'uav0000124_00944_v', 'uav0000126_00001_v', 'uav0000140_01590_v', 'uav0000143_02250_v', 'uav0000145_00000_v',
+            # 'uav0000218_00001_v', 'uav0000222_03150_v', 'uav0000239_03720_v', 'uav0000239_12336_v', 'uav0000243_00001_v',
+            # 'uav0000244_01440_v', 'uav0000248_00001_v', 'uav0000263_03289_v', 'uav0000264_02760_v', 'uav0000270_00001_v',
+            # 'uav0000273_00001_v', 'uav0000278_00001_v', 'uav0000279_00001_v', 'uav0000281_00460_v', 'uav0000289_00001_v',
+            'uav0000289_06922_v', 'uav0000295_02300_v', 'uav0000307_00000_v', 'uav0000315_00000_v',
+            'uav0000323_01173_v',  # 'uav0000300_00000_v', excluded for less cars to other ratio
+            'uav0000326_01035_v', 'uav0000342_04692_v', 'uav0000352_05980_v', 'uav0000361_02323_v',
+            'uav0000366_00001_v'
+        ]
+        seqs.sort()
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(VisDroneTrain10c, self).__init__(train, query, gallery, **kwargs)
+
+
+class VisDroneTrain15a(torchreid.data.ImageDataset):
+    # dataset_dir = '/home/jatin/HDD2TB/datasets/UAVDT_reid'
+    dataset_dir = args.data
+
+    def __init__(self, root='', mode='train', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        # Train
+        print('Skipping some real sequences to balance the total number of samples')
+        seqs = ['uav0000124_00944_v', 'uav0000126_00001_v', 'uav0000140_01590_v', 'uav0000143_02250_v',
+                'uav0000145_00000_v',
+                # 'uav0000218_00001_v', 'uav0000222_03150_v', 'uav0000239_03720_v', 'uav0000239_12336_v', 'uav0000243_00001_v',
+                # 'uav0000244_01440_v', 'uav0000248_00001_v', 'uav0000263_03289_v', 'uav0000264_02760_v', 'uav0000270_00001_v',
+                # 'uav0000273_00001_v', 'uav0000278_00001_v', 'uav0000279_00001_v', 'uav0000281_00460_v', 'uav0000289_00001_v',
+                'uav0000289_06922_v', 'uav0000295_02300_v', 'uav0000307_00000_v', 'uav0000315_00000_v',
+                'uav0000323_01173_v',  # 'uav0000300_00000_v', excluded for less cars to other ratio
+                'uav0000326_01035_v', 'uav0000342_04692_v', 'uav0000352_05980_v', 'uav0000361_02323_v',
+                'uav0000366_00001_v']
+        seqs.sort()
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(VisDroneTrain15a, self).__init__(train, query, gallery, **kwargs)
+
+
+class VisDroneTrain15b(torchreid.data.ImageDataset):
+    # dataset_dir = '/home/jatin/HDD2TB/datasets/UAVDT_reid'
+    dataset_dir = args.data
+
+    def __init__(self, root='', mode='train', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        # Train
+        print('Skipping some real sequences to balance the total number of samples')
+        seqs = [
+            # 'uav0000124_00944_v', 'uav0000126_00001_v', 'uav0000140_01590_v', 'uav0000143_02250_v', 'uav0000145_00000_v',
+            'uav0000218_00001_v', 'uav0000222_03150_v', 'uav0000239_03720_v', 'uav0000239_12336_v',
+            'uav0000243_00001_v',
+            'uav0000244_01440_v', 'uav0000248_00001_v', 'uav0000263_03289_v', 'uav0000264_02760_v',
+            'uav0000270_00001_v',
+            'uav0000273_00001_v', 'uav0000278_00001_v', 'uav0000279_00001_v', 'uav0000281_00460_v',
+            'uav0000289_00001_v',
+            # 'uav0000289_06922_v', 'uav0000295_02300_v', 'uav0000307_00000_v', 'uav0000315_00000_v', 'uav0000323_01173_v', #'uav0000300_00000_v', excluded for less cars to other ratio
+            # 'uav0000326_01035_v', 'uav0000342_04692_v', 'uav0000352_05980_v', 'uav0000361_02323_v', 'uav0000366_00001_v'
+        ]
+        seqs.sort()
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(VisDroneTrain15b, self).__init__(train, query, gallery, **kwargs)
+
+
+class VisDroneTrain20a(torchreid.data.ImageDataset):
+    # dataset_dir = '/home/jatin/HDD2TB/datasets/UAVDT_reid'
+    dataset_dir = args.data
+
+    def __init__(self, root='', mode='train', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        # Train
+        print('Skipping some real sequences to balance the total number of samples')
+        seqs = ['uav0000124_00944_v', 'uav0000126_00001_v', 'uav0000140_01590_v', 'uav0000143_02250_v',
+                'uav0000145_00000_v',
+                'uav0000218_00001_v', 'uav0000222_03150_v', 'uav0000239_03720_v', 'uav0000239_12336_v',
+                'uav0000243_00001_v',
+                'uav0000244_01440_v', 'uav0000248_00001_v', 'uav0000263_03289_v', 'uav0000264_02760_v',
+                'uav0000270_00001_v',
+                'uav0000273_00001_v', 'uav0000278_00001_v', 'uav0000279_00001_v', 'uav0000281_00460_v',
+                'uav0000289_00001_v',
+                # 'uav0000289_06922_v', 'uav0000295_02300_v', 'uav0000307_00000_v', 'uav0000315_00000_v', 'uav0000323_01173_v', #'uav0000300_00000_v', excluded for less cars to other ratio
+                # 'uav0000326_01035_v', 'uav0000342_04692_v', 'uav0000352_05980_v', 'uav0000361_02323_v', 'uav0000366_00001_v'
+                ]
+        seqs.sort()
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(VisDroneTrain20a, self).__init__(train, query, gallery, **kwargs)
+
+
+class VisDroneTrain20b(torchreid.data.ImageDataset):
+    # dataset_dir = '/home/jatin/HDD2TB/datasets/UAVDT_reid'
+    dataset_dir = args.data
+
+    def __init__(self, root='', mode='train', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        # Train
+        print('Skipping some real sequences to balance the total number of samples')
+        seqs = ['uav0000124_00944_v', 'uav0000126_00001_v', 'uav0000140_01590_v', 'uav0000143_02250_v',
+                'uav0000145_00000_v',
+                'uav0000218_00001_v', 'uav0000222_03150_v', 'uav0000239_03720_v', 'uav0000239_12336_v',
+                'uav0000243_00001_v',
+                # 'uav0000244_01440_v', 'uav0000248_00001_v', 'uav0000263_03289_v', 'uav0000264_02760_v', 'uav0000270_00001_v',
+                # 'uav0000273_00001_v', 'uav0000278_00001_v', 'uav0000279_00001_v', 'uav0000281_00460_v', 'uav0000289_00001_v',
+                'uav0000289_06922_v', 'uav0000295_02300_v', 'uav0000307_00000_v', 'uav0000315_00000_v',
+                'uav0000323_01173_v',  # 'uav0000300_00000_v', excluded for less cars to other ratio
+                'uav0000326_01035_v', 'uav0000342_04692_v', 'uav0000352_05980_v', 'uav0000361_02323_v',
+                'uav0000366_00001_v'
+                ]
+        seqs.sort()
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(VisDroneTrain20b, self).__init__(train, query, gallery, **kwargs)
+
+
+class VisDroneTrain20c(torchreid.data.ImageDataset):
+    # dataset_dir = '/home/jatin/HDD2TB/datasets/UAVDT_reid'
+    dataset_dir = args.data
+
+    def __init__(self, root='', mode='train', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        # Train
+        print('Skipping some real sequences to balance the total number of samples')
+        seqs = [
+            # 'uav0000124_00944_v', 'uav0000126_00001_v', 'uav0000140_01590_v', 'uav0000143_02250_v', 'uav0000145_00000_v',
+            # 'uav0000218_00001_v', 'uav0000222_03150_v', 'uav0000239_03720_v', 'uav0000239_12336_v', 'uav0000243_00001_v',
+            'uav0000244_01440_v', 'uav0000248_00001_v', 'uav0000263_03289_v', 'uav0000264_02760_v',
+            'uav0000270_00001_v',
+            'uav0000273_00001_v', 'uav0000278_00001_v', 'uav0000279_00001_v', 'uav0000281_00460_v',
+            'uav0000289_00001_v',
+            'uav0000289_06922_v', 'uav0000295_02300_v', 'uav0000307_00000_v', 'uav0000315_00000_v',
+            'uav0000323_01173_v',  # 'uav0000300_00000_v', excluded for less cars to other ratio
+            'uav0000326_01035_v', 'uav0000342_04692_v', 'uav0000352_05980_v', 'uav0000361_02323_v',
+            'uav0000366_00001_v'
+        ]
+        seqs.sort()
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(VisDroneTrain20c, self).__init__(train, query, gallery, **kwargs)
+
+
+class VisDroneTrain25a(torchreid.data.ImageDataset):
+    # dataset_dir = '/home/jatin/HDD2TB/datasets/UAVDT_reid'
+    dataset_dir = args.data
+
+    def __init__(self, root='', mode='train', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        # Train
+        print('Skipping some real sequences to balance the total number of samples')
+        seqs = ['uav0000124_00944_v', 'uav0000126_00001_v', 'uav0000140_01590_v', 'uav0000143_02250_v',
+                'uav0000145_00000_v',
+                'uav0000218_00001_v', 'uav0000222_03150_v', 'uav0000239_03720_v', 'uav0000239_12336_v',
+                'uav0000243_00001_v',
+                'uav0000244_01440_v', 'uav0000248_00001_v', 'uav0000263_03289_v', 'uav0000264_02760_v',
+                'uav0000270_00001_v',
+                'uav0000273_00001_v', 'uav0000278_00001_v', 'uav0000279_00001_v', 'uav0000281_00460_v',
+                'uav0000289_00001_v',
+                'uav0000289_06922_v', 'uav0000295_02300_v', 'uav0000307_00000_v', 'uav0000315_00000_v',
+                'uav0000323_01173_v',  # 'uav0000300_00000_v', excluded for less cars to other ratio
+                # 'uav0000326_01035_v', 'uav0000342_04692_v', 'uav0000352_05980_v', 'uav0000361_02323_v', 'uav0000366_00001_v'
+                ]
+        seqs.sort()
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(VisDroneTrain25a, self).__init__(train, query, gallery, **kwargs)
+
+
+class VisDroneTrain25b(torchreid.data.ImageDataset):
+    # dataset_dir = '/home/jatin/HDD2TB/datasets/UAVDT_reid'
+    dataset_dir = args.data
+
+    def __init__(self, root='', mode='train', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        # Train
+        print('Skipping some real sequences to balance the total number of samples')
+        seqs = ['uav0000124_00944_v', 'uav0000126_00001_v', 'uav0000140_01590_v', 'uav0000143_02250_v',
+                'uav0000145_00000_v',
+                'uav0000218_00001_v', 'uav0000222_03150_v', 'uav0000239_03720_v', 'uav0000239_12336_v',
+                'uav0000243_00001_v',
+                'uav0000244_01440_v', 'uav0000248_00001_v', 'uav0000263_03289_v', 'uav0000264_02760_v',
+                'uav0000270_00001_v',
+                'uav0000273_00001_v', 'uav0000278_00001_v', 'uav0000279_00001_v', 'uav0000281_00460_v',
+                'uav0000289_00001_v',
+                # 'uav0000289_06922_v', 'uav0000295_02300_v', 'uav0000307_00000_v', 'uav0000315_00000_v', 'uav0000323_01173_v', #'uav0000300_00000_v', excluded for less cars to other ratio
+                'uav0000326_01035_v', 'uav0000342_04692_v', 'uav0000352_05980_v', 'uav0000361_02323_v',
+                'uav0000366_00001_v'
+                ]
+        seqs.sort()
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(VisDroneTrain25b, self).__init__(train, query, gallery, **kwargs)
+
+
+class VisDroneTrain25c(torchreid.data.ImageDataset):
+    # dataset_dir = '/home/jatin/HDD2TB/datasets/UAVDT_reid'
+    dataset_dir = args.data
+
+    def __init__(self, root='', mode='train', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        # Train
+        print('Skipping some real sequences to balance the total number of samples')
+        seqs = ['uav0000124_00944_v', 'uav0000126_00001_v', 'uav0000140_01590_v', 'uav0000143_02250_v',
+                'uav0000145_00000_v',
+                'uav0000218_00001_v', 'uav0000222_03150_v', 'uav0000239_03720_v', 'uav0000239_12336_v',
+                'uav0000243_00001_v',
+                'uav0000244_01440_v', 'uav0000248_00001_v', 'uav0000263_03289_v', 'uav0000264_02760_v',
+                'uav0000270_00001_v',
+                # 'uav0000273_00001_v', 'uav0000278_00001_v', 'uav0000279_00001_v', 'uav0000281_00460_v', 'uav0000289_00001_v',
+                'uav0000289_06922_v', 'uav0000295_02300_v', 'uav0000307_00000_v', 'uav0000315_00000_v',
+                'uav0000323_01173_v',  # 'uav0000300_00000_v', excluded for less cars to other ratio
+                'uav0000326_01035_v', 'uav0000342_04692_v', 'uav0000352_05980_v', 'uav0000361_02323_v',
+                'uav0000366_00001_v'
+                ]
+        seqs.sort()
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(VisDroneTrain25c, self).__init__(train, query, gallery, **kwargs)
+
+
+class VisDroneTrain25d(torchreid.data.ImageDataset):
+    # dataset_dir = '/home/jatin/HDD2TB/datasets/UAVDT_reid'
+    dataset_dir = args.data
+
+    def __init__(self, root='', mode='train', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        # Train
+        print('Skipping some real sequences to balance the total number of samples')
+        seqs = ['uav0000124_00944_v', 'uav0000126_00001_v', 'uav0000140_01590_v', 'uav0000143_02250_v',
+                'uav0000145_00000_v',
+                'uav0000218_00001_v', 'uav0000222_03150_v', 'uav0000239_03720_v', 'uav0000239_12336_v',
+                'uav0000243_00001_v',
+                # 'uav0000244_01440_v', 'uav0000248_00001_v', 'uav0000263_03289_v', 'uav0000264_02760_v', 'uav0000270_00001_v',
+                'uav0000273_00001_v', 'uav0000278_00001_v', 'uav0000279_00001_v', 'uav0000281_00460_v',
+                'uav0000289_00001_v',
+                'uav0000289_06922_v', 'uav0000295_02300_v', 'uav0000307_00000_v', 'uav0000315_00000_v',
+                'uav0000323_01173_v',  # 'uav0000300_00000_v', excluded for less cars to other ratio
+                'uav0000326_01035_v', 'uav0000342_04692_v', 'uav0000352_05980_v', 'uav0000361_02323_v',
+                'uav0000366_00001_v'
+                ]
+        seqs.sort()
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(VisDroneTrain25d, self).__init__(train, query, gallery, **kwargs)
+
+
+class VisDroneTrain25e(torchreid.data.ImageDataset):
+    # dataset_dir = '/home/jatin/HDD2TB/datasets/UAVDT_reid'
+    dataset_dir = args.data
+
+    def __init__(self, root='', mode='train', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        # Train
+        print('Skipping some real sequences to balance the total number of samples')
+        seqs = ['uav0000124_00944_v', 'uav0000126_00001_v', 'uav0000140_01590_v', 'uav0000143_02250_v',
+                'uav0000145_00000_v',
+                # 'uav0000218_00001_v', 'uav0000222_03150_v', 'uav0000239_03720_v', 'uav0000239_12336_v', 'uav0000243_00001_v',
+                'uav0000244_01440_v', 'uav0000248_00001_v', 'uav0000263_03289_v', 'uav0000264_02760_v',
+                'uav0000270_00001_v',
+                'uav0000273_00001_v', 'uav0000278_00001_v', 'uav0000279_00001_v', 'uav0000281_00460_v',
+                'uav0000289_00001_v',
+                'uav0000289_06922_v', 'uav0000295_02300_v', 'uav0000307_00000_v', 'uav0000315_00000_v',
+                'uav0000323_01173_v',  # 'uav0000300_00000_v', excluded for less cars to other ratio
+                'uav0000326_01035_v', 'uav0000342_04692_v', 'uav0000352_05980_v', 'uav0000361_02323_v',
+                'uav0000366_00001_v'
+                ]
+        seqs.sort()
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(VisDroneTrain25e, self).__init__(train, query, gallery, **kwargs)
+
+
+class VisDroneTrain25f(torchreid.data.ImageDataset):
+    # dataset_dir = '/home/jatin/HDD2TB/datasets/UAVDT_reid'
+    dataset_dir = args.data
+
+    def __init__(self, root='', mode='train', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        # Train
+        print('Skipping some real sequences to balance the total number of samples')
+        seqs = [
+            # 'uav0000124_00944_v', 'uav0000126_00001_v', 'uav0000140_01590_v', 'uav0000143_02250_v', 'uav0000145_00000_v',
+            'uav0000218_00001_v', 'uav0000222_03150_v', 'uav0000239_03720_v', 'uav0000239_12336_v',
+            'uav0000243_00001_v',
+            'uav0000244_01440_v', 'uav0000248_00001_v', 'uav0000263_03289_v', 'uav0000264_02760_v',
+            'uav0000270_00001_v',
+            'uav0000273_00001_v', 'uav0000278_00001_v', 'uav0000279_00001_v', 'uav0000281_00460_v',
+            'uav0000289_00001_v',
+            'uav0000289_06922_v', 'uav0000295_02300_v', 'uav0000307_00000_v', 'uav0000315_00000_v',
+            'uav0000323_01173_v',  # 'uav0000300_00000_v', excluded for less cars to other ratio
+            'uav0000326_01035_v', 'uav0000342_04692_v', 'uav0000352_05980_v', 'uav0000361_02323_v',
+            'uav0000366_00001_v'
+        ]
+        seqs.sort()
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(VisDroneTrain25f, self).__init__(train, query, gallery, **kwargs)
+
+
+class VisDroneTrain30(torchreid.data.ImageDataset):
+    # dataset_dir = '/home/jatin/HDD2TB/datasets/UAVDT_reid'
+    dataset_dir = args.data
+
+    def __init__(self, root='', mode='train', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        # Train
+        print('Skipping some real sequences to balance the total number of samples')
+        seqs = [
+            'uav0000124_00944_v', 'uav0000126_00001_v', 'uav0000140_01590_v', 'uav0000143_02250_v',
+            'uav0000145_00000_v',
+            'uav0000218_00001_v', 'uav0000222_03150_v', 'uav0000239_03720_v', 'uav0000239_12336_v',
+            'uav0000243_00001_v',
+            'uav0000244_01440_v', 'uav0000248_00001_v', 'uav0000263_03289_v', 'uav0000264_02760_v',
+            'uav0000270_00001_v',
+            'uav0000273_00001_v', 'uav0000278_00001_v', 'uav0000279_00001_v', 'uav0000281_00460_v',
+            'uav0000289_00001_v',
+            'uav0000289_06922_v', 'uav0000295_02300_v', 'uav0000307_00000_v', 'uav0000315_00000_v',
+            'uav0000323_01173_v',  # 'uav0000300_00000_v', excluded for less cars to other ratio
+            'uav0000326_01035_v', 'uav0000342_04692_v', 'uav0000352_05980_v', 'uav0000361_02323_v',
+            'uav0000366_00001_v'
+        ]
+        seqs.sort()
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(VisDroneTrain30, self).__init__(train, query, gallery, **kwargs)
+
+def MOT_seq_selector(mode,seqs):
+    if mode == 'test':
+        mode ='train-3a'
+
+    if mode == 'train':
+        selector = range(len(seqs))
+    elif mode == 'train-3a':
+        selector = range(3)
+    elif mode == 'train-3b':
+        selector = range(3,6)
+    elif mode == 'train-3c':
+        selector = range(6,9)
+    elif mode == 'train-3d':
+        selector = range(9,12)
+    elif mode == 'train-3e':
+        selector = range(12,15)
+    elif mode == 'train-3f':
+        selector = range(15,18)
+    elif mode == 'train-3g':
+        selector = range(18,21)
+    elif mode == 'train-14b':
+        unselector = range(7, 14)
+        selector = [i for i in range(21)]
+        for i in unselector:
+            selector.remove(i)
+    elif mode == 'train-14c':
+        selector = range(7, 21)
+    elif mode == 'train-7a':
+        selector = range(7)
+    elif mode == 'train-7b':
+        selector = range(7,14)
+    elif mode == 'train-7c':
+        selector = range(14,21)
+    elif mode == 'train-14a':
+        selector = range(14)
+    elif mode == 'train-14b':
+        unselector = range(7,14)
+        selector = [i for i in range(21)]
+        for i in unselector:
+            selector.remove(i)
+    elif mode == 'train-14c':
+        selector = range(7,21)
+    elif mode == 'train-18a':
+        selector = range(18)
+    elif mode == 'train-18b':
+        unselector = range(15,18)
+        selector = [i for i in range(21)]
+        for i in unselector:
+            selector.remove(i)
+    elif mode == 'train-18c':
+        unselector = range(12,15)
+        selector = [i for i in range(21)]
+        for i in unselector:
+            selector.remove(i)
+    elif mode == 'train-18d':
+        unselector = range(9,12)
+        selector = [i for i in range(21)]
+        for i in unselector:
+            selector.remove(i)
+    elif mode == 'train-18e':
+        unselector = range(6,9)
+        selector = [i for i in range(21)]
+        for i in unselector:
+            selector.remove(i)
+    elif mode == 'train-18f':
+        unselector = range(3,6)
+        selector = [i for i in range(21)]
+        for i in unselector:
+            selector.remove(i)
+    elif mode == 'train-18g':
+        selector = range(3,21)
+    seqs = [seqs[i] for i in selector]
+    return seqs
+
+class MOT17Train(torchreid.data.ImageDataset):
+    dataset_dir = args.data
+
+    def __init__(self, root='', subset='train', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        seqs = os.listdir(self.dataset_dir)
+        seqs.sort()
+
+        seqs = MOT_seq_selector(subset,seqs)
+        print(f'selected {len(seqs)} from {self.dataset_dir}')
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(MOT17Train, self).__init__(train, query, gallery, **kwargs)
+
+class MOT17Train3a(torchreid.data.ImageDataset):
+    dataset_dir = args.data
+
+    def __init__(self, root='', subset='train-3a', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        seqs = os.listdir(self.dataset_dir)
+        seqs.sort()
+
+        seqs = MOT_seq_selector(subset,seqs)
+        print(f'selected {len(seqs)} from {self.dataset_dir}')
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(MOT17Train3a, self).__init__(train, query, gallery, **kwargs)
+
+class MOT17Train3b(torchreid.data.ImageDataset):
+    dataset_dir = args.data
+
+    def __init__(self, root='', subset='train-3b', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        seqs = os.listdir(self.dataset_dir)
+        seqs.sort()
+
+        seqs = MOT_seq_selector(subset,seqs)
+        print(f'selected {len(seqs)} from {self.dataset_dir}')
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(MOT17Train3b, self).__init__(train, query, gallery, **kwargs)
+
+class MOT17Train3c(torchreid.data.ImageDataset):
+    dataset_dir = args.data
+
+    def __init__(self, root='', subset='train-3c', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        seqs = os.listdir(self.dataset_dir)
+        seqs.sort()
+
+        seqs = MOT_seq_selector(subset,seqs)
+        print(f'selected {len(seqs)} from {self.dataset_dir}')
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(MOT17Train3c, self).__init__(train, query, gallery, **kwargs)
+
+class MOT17Train3d(torchreid.data.ImageDataset):
+    dataset_dir = args.data
+
+    def __init__(self, root='', subset='train-3d', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        seqs = os.listdir(self.dataset_dir)
+        seqs.sort()
+
+        seqs = MOT_seq_selector(subset,seqs)
+        print(f'selected {len(seqs)} from {self.dataset_dir}')
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(MOT17Train3d, self).__init__(train, query, gallery, **kwargs)
+
+class MOT17Train3e(torchreid.data.ImageDataset):
+    dataset_dir = args.data
+
+    def __init__(self, root='', subset='train-3e', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        seqs = os.listdir(self.dataset_dir)
+        seqs.sort()
+
+        seqs = MOT_seq_selector(subset,seqs)
+        print(f'selected {len(seqs)} from {self.dataset_dir}')
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(MOT17Train3e, self).__init__(train, query, gallery, **kwargs)
+
+class MOT17Train3f(torchreid.data.ImageDataset):
+    dataset_dir = args.data
+
+    def __init__(self, root='', subset='train-3f', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        seqs = os.listdir(self.dataset_dir)
+        seqs.sort()
+
+        seqs = MOT_seq_selector(subset,seqs)
+        print(f'selected {len(seqs)} from {self.dataset_dir}')
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(MOT17Train3f, self).__init__(train, query, gallery, **kwargs)
+
+class MOT17Train3g(torchreid.data.ImageDataset):
+    dataset_dir = args.data
+
+    def __init__(self, root='', subset='train-3g', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        seqs = os.listdir(self.dataset_dir)
+        seqs.sort()
+
+        seqs = MOT_seq_selector(subset,seqs)
+        print(f'selected {len(seqs)} from {self.dataset_dir}')
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(MOT17Train3g, self).__init__(train, query, gallery, **kwargs)
+
+class MOT17Train7a(torchreid.data.ImageDataset):
+    dataset_dir = args.data
+
+    def __init__(self, root='', subset='train-7a', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        seqs = os.listdir(self.dataset_dir)
+        seqs.sort()
+
+        seqs = MOT_seq_selector(subset,seqs)
+        print(f'selected {len(seqs)} from {self.dataset_dir}')
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(MOT17Train7a, self).__init__(train, query, gallery, **kwargs)
+
+class MOT17Train7b(torchreid.data.ImageDataset):
+    dataset_dir = args.data
+
+    def __init__(self, root='', subset='train-7b', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        seqs = os.listdir(self.dataset_dir)
+        seqs.sort()
+
+        seqs = MOT_seq_selector(subset,seqs)
+        print(f'selected {len(seqs)} from {self.dataset_dir}')
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(MOT17Train7b, self).__init__(train, query, gallery, **kwargs)
+
+class MOT17Train7c(torchreid.data.ImageDataset):
+    dataset_dir = args.data
+
+    def __init__(self, root='', subset='train-7c', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        seqs = os.listdir(self.dataset_dir)
+        seqs.sort()
+
+        seqs = MOT_seq_selector(subset,seqs)
+        print(f'selected {len(seqs)} from {self.dataset_dir}')
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(MOT17Train7c, self).__init__(train, query, gallery, **kwargs)
+
+class MOT17Train14a(torchreid.data.ImageDataset):
+    dataset_dir = args.data
+
+    def __init__(self, root='', subset='train-14a', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        seqs = os.listdir(self.dataset_dir)
+        seqs.sort()
+
+        seqs = MOT_seq_selector(subset,seqs)
+        print(f'selected {len(seqs)} from {self.dataset_dir}')
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(MOT17Train14a, self).__init__(train, query, gallery, **kwargs)
+
+class MOT17Train14b(torchreid.data.ImageDataset):
+    dataset_dir = args.data
+
+    def __init__(self, root='', subset='train-14b', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        seqs = os.listdir(self.dataset_dir)
+        seqs.sort()
+
+        seqs = MOT_seq_selector(subset,seqs)
+        print(f'selected {len(seqs)} from {self.dataset_dir}')
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(MOT17Train14b, self).__init__(train, query, gallery, **kwargs)
+
+class MOT17Train14c(torchreid.data.ImageDataset):
+    dataset_dir = args.data
+
+    def __init__(self, root='', subset='train-14c', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        seqs = os.listdir(self.dataset_dir)
+        seqs.sort()
+
+        seqs = MOT_seq_selector(subset,seqs)
+        print(f'selected {len(seqs)} from {self.dataset_dir}')
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(MOT17Train14c, self).__init__(train, query, gallery, **kwargs)
+
+class MOT17Train18a(torchreid.data.ImageDataset):
+    dataset_dir = args.data
+
+    def __init__(self, root='', subset='train-18a', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        seqs = os.listdir(self.dataset_dir)
+        seqs.sort()
+
+        seqs = MOT_seq_selector(subset,seqs)
+        print(f'selected {len(seqs)} from {self.dataset_dir}')
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(MOT17Train18a, self).__init__(train, query, gallery, **kwargs)
+
+class MOT17Train18b(torchreid.data.ImageDataset):
+    dataset_dir = args.data
+
+    def __init__(self, root='', subset='train-18b', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        seqs = os.listdir(self.dataset_dir)
+        seqs.sort()
+
+        seqs = MOT_seq_selector(subset,seqs)
+        print(f'selected {len(seqs)} from {self.dataset_dir}')
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(MOT17Train18b, self).__init__(train, query, gallery, **kwargs)
+
+class MOT17Train18c(torchreid.data.ImageDataset):
+    dataset_dir = args.data
+
+    def __init__(self, root='', subset='train-18c', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        seqs = os.listdir(self.dataset_dir)
+        seqs.sort()
+
+        seqs = MOT_seq_selector(subset,seqs)
+        print(f'selected {len(seqs)} from {self.dataset_dir}')
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(MOT17Train18c, self).__init__(train, query, gallery, **kwargs)
+
+class MOT17Train18d(torchreid.data.ImageDataset):
+    dataset_dir = args.data
+
+    def __init__(self, root='', subset='train-18d', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        seqs = os.listdir(self.dataset_dir)
+        seqs.sort()
+
+        seqs = MOT_seq_selector(subset,seqs)
+        print(f'selected {len(seqs)} from {self.dataset_dir}')
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(MOT17Train18d, self).__init__(train, query, gallery, **kwargs)
+
+class MOT17Train18e(torchreid.data.ImageDataset):
+    dataset_dir = args.data
+
+    def __init__(self, root='', subset='train-18e', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        seqs = os.listdir(self.dataset_dir)
+        seqs.sort()
+
+        seqs = MOT_seq_selector(subset,seqs)
+        print(f'selected {len(seqs)} from {self.dataset_dir}')
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(MOT17Train18e, self).__init__(train, query, gallery, **kwargs)
+
+class MOT17Train18f(torchreid.data.ImageDataset):
+    dataset_dir = args.data
+
+    def __init__(self, root='', subset='train-18f', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        seqs = os.listdir(self.dataset_dir)
+        seqs.sort()
+
+        seqs = MOT_seq_selector(subset,seqs)
+        print(f'selected {len(seqs)} from {self.dataset_dir}')
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(MOT17Train18f, self).__init__(train, query, gallery, **kwargs)
+
+class MOT17Train18g(torchreid.data.ImageDataset):
+    dataset_dir = args.data
+
+    def __init__(self, root='', subset='train-18g', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        seqs = os.listdir(self.dataset_dir)
+        seqs.sort()
+
+        seqs = MOT_seq_selector(subset,seqs)
+        print(f'selected {len(seqs)} from {self.dataset_dir}')
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(MOT17Train18g, self).__init__(train, query, gallery, **kwargs)
+
+class MOT17Test(torchreid.data.ImageDataset):
+    dataset_dir = args.data
+
+    def __init__(self, root='', subset='test', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        seqs = os.listdir(self.dataset_dir)
+        seqs.sort()
+
+        seqs = MOT_seq_selector(subset,seqs)
+        print(f'selected {len(seqs)} from {self.dataset_dir}')
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(MOT17Test, self).__init__(train, query, gallery, **kwargs)
+
+class MOTSynthTrain(torchreid.data.ImageDataset):
+    dataset_dir = args.data
+
+    def __init__(self, root='', subset='train', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        seqs = os.listdir(self.dataset_dir)
+        seqs.sort()
+
+        seqs = MOT_seq_selector(subset,seqs)
+        print(f'selected {len(seqs)} from {self.dataset_dir}')
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(MOTSynthTrain, self).__init__(train, query, gallery, **kwargs)
+
+class MOTSynthTest(torchreid.data.ImageDataset):
+    dataset_dir = args.data
+
+    def __init__(self, root='', subset='test', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        seqs = os.listdir(self.dataset_dir)
+        seqs.sort()
+
+        seqs = MOT_seq_selector(subset,seqs)
+        print(f'selected {len(seqs)} from {self.dataset_dir}')
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(MOTSynthTest, self).__init__(train, query, gallery, **kwargs)
+
+class MOTSynthTrain3a(torchreid.data.ImageDataset):
+    dataset_dir = args.data
+
+    def __init__(self, root='', subset='train-3a', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        seqs = os.listdir(self.dataset_dir)
+        seqs.sort()
+
+        seqs = MOT_seq_selector(subset,seqs)
+        print(f'selected {len(seqs)} from {self.dataset_dir}')
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(MOTSynthTrain3a, self).__init__(train, query, gallery, **kwargs)
+
+class MOTSynthTrain3b(torchreid.data.ImageDataset):
+    dataset_dir = args.data
+
+    def __init__(self, root='', subset='train-3b', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        seqs = os.listdir(self.dataset_dir)
+        seqs.sort()
+
+        seqs = MOT_seq_selector(subset,seqs)
+        print(f'selected {len(seqs)} from {self.dataset_dir}')
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(MOTSynthTrain3b, self).__init__(train, query, gallery, **kwargs)
+
+class MOTSynthTrain3c(torchreid.data.ImageDataset):
+    dataset_dir = args.data
+
+    def __init__(self, root='', subset='train-3c', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        seqs = os.listdir(self.dataset_dir)
+        seqs.sort()
+
+        seqs = MOT_seq_selector(subset,seqs)
+        print(f'selected {len(seqs)} from {self.dataset_dir}')
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(MOTSynthTrain3c, self).__init__(train, query, gallery, **kwargs)
+
+class MOTSynthTrain3d(torchreid.data.ImageDataset):
+    dataset_dir = args.data
+
+    def __init__(self, root='', subset='train-3d', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        seqs = os.listdir(self.dataset_dir)
+        seqs.sort()
+
+        seqs = MOT_seq_selector(subset,seqs)
+        print(f'selected {len(seqs)} from {self.dataset_dir}')
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(MOTSynthTrain3d, self).__init__(train, query, gallery, **kwargs)
+
+class MOTSynthTrain3e(torchreid.data.ImageDataset):
+    dataset_dir = args.data
+
+    def __init__(self, root='', subset='train-3e', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        seqs = os.listdir(self.dataset_dir)
+        seqs.sort()
+
+        seqs = MOT_seq_selector(subset,seqs)
+        print(f'selected {len(seqs)} from {self.dataset_dir}')
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(MOTSynthTrain3e, self).__init__(train, query, gallery, **kwargs)
+
+class MOTSynthTrain3f(torchreid.data.ImageDataset):
+    dataset_dir = args.data
+
+    def __init__(self, root='', subset='train-3f', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        seqs = os.listdir(self.dataset_dir)
+        seqs.sort()
+
+        seqs = MOT_seq_selector(subset,seqs)
+        print(f'selected {len(seqs)} from {self.dataset_dir}')
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(MOTSynthTrain3f, self).__init__(train, query, gallery, **kwargs)
+
+class MOTSynthTrain3g(torchreid.data.ImageDataset):
+    dataset_dir = args.data
+
+    def __init__(self, root='', subset='train-3g', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        seqs = os.listdir(self.dataset_dir)
+        seqs.sort()
+
+        seqs = MOT_seq_selector(subset,seqs)
+        print(f'selected {len(seqs)} from {self.dataset_dir}')
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(MOTSynthTrain3g, self).__init__(train, query, gallery, **kwargs)
+
+class MOTSynthTrain7a(torchreid.data.ImageDataset):
+    dataset_dir = args.data
+
+    def __init__(self, root='', subset='train-7a', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        seqs = os.listdir(self.dataset_dir)
+        seqs.sort()
+
+        seqs = MOT_seq_selector(subset,seqs)
+        print(f'selected {len(seqs)} from {self.dataset_dir}')
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(MOTSynthTrain7a, self).__init__(train, query, gallery, **kwargs)
+
+class MOTSynthTrain7b(torchreid.data.ImageDataset):
+    dataset_dir = args.data
+
+    def __init__(self, root='', subset='train-7b', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        seqs = os.listdir(self.dataset_dir)
+        seqs.sort()
+
+        seqs = MOT_seq_selector(subset,seqs)
+        print(f'selected {len(seqs)} from {self.dataset_dir}')
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(MOTSynthTrain7b, self).__init__(train, query, gallery, **kwargs)
+
+class MOTSynthTrain7c(torchreid.data.ImageDataset):
+    dataset_dir = args.data
+
+    def __init__(self, root='', subset='train-7c', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        seqs = os.listdir(self.dataset_dir)
+        seqs.sort()
+
+        seqs = MOT_seq_selector(subset,seqs)
+        print(f'selected {len(seqs)} from {self.dataset_dir}')
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(MOTSynthTrain7c, self).__init__(train, query, gallery, **kwargs)
+
+class MOTSynthTrain14a(torchreid.data.ImageDataset):
+    dataset_dir = args.data
+
+    def __init__(self, root='', subset='train-14a', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        seqs = os.listdir(self.dataset_dir)
+        seqs.sort()
+
+        seqs = MOT_seq_selector(subset,seqs)
+        print(f'selected {len(seqs)} from {self.dataset_dir}')
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(MOTSynthTrain14a, self).__init__(train, query, gallery, **kwargs)
+
+class MOTSynthTrain14b(torchreid.data.ImageDataset):
+    dataset_dir = args.data
+
+    def __init__(self, root='', subset='train-14b', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        seqs = os.listdir(self.dataset_dir)
+        seqs.sort()
+
+        seqs = MOT_seq_selector(subset,seqs)
+        print(f'selected {len(seqs)} from {self.dataset_dir}')
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(MOTSynthTrain14b, self).__init__(train, query, gallery, **kwargs)
+
+class MOTSynthTrain14c(torchreid.data.ImageDataset):
+    dataset_dir = args.data
+
+    def __init__(self, root='', subset='train-14c', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        seqs = os.listdir(self.dataset_dir)
+        seqs.sort()
+
+        seqs = MOT_seq_selector(subset,seqs)
+        print(f'selected {len(seqs)} from {self.dataset_dir}')
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(MOTSynthTrain14c, self).__init__(train, query, gallery, **kwargs)
+
+class MOTSynthTrain18a(torchreid.data.ImageDataset):
+    dataset_dir = args.data
+
+    def __init__(self, root='', subset='train-18a', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        seqs = os.listdir(self.dataset_dir)
+        seqs.sort()
+
+        seqs = MOT_seq_selector(subset,seqs)
+        print(f'selected {len(seqs)} from {self.dataset_dir}')
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(MOTSynthTrain18a, self).__init__(train, query, gallery, **kwargs)
+
+class MOTSynthTrain18b(torchreid.data.ImageDataset):
+    dataset_dir = args.data
+
+    def __init__(self, root='', subset='train-18b', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        seqs = os.listdir(self.dataset_dir)
+        seqs.sort()
+
+        seqs = MOT_seq_selector(subset,seqs)
+        print(f'selected {len(seqs)} from {self.dataset_dir}')
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(MOTSynthTrain18b, self).__init__(train, query, gallery, **kwargs)
+
+class MOTSynthTrain18c(torchreid.data.ImageDataset):
+    dataset_dir = args.data
+
+    def __init__(self, root='', subset='train-18c', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        seqs = os.listdir(self.dataset_dir)
+        seqs.sort()
+
+        seqs = MOT_seq_selector(subset,seqs)
+        print(f'selected {len(seqs)} from {self.dataset_dir}')
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(MOTSynthTrain18c, self).__init__(train, query, gallery, **kwargs)
+
+class MOTSynthTrain18d(torchreid.data.ImageDataset):
+    dataset_dir = args.data
+
+    def __init__(self, root='', subset='train-18d', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        seqs = os.listdir(self.dataset_dir)
+        seqs.sort()
+
+        seqs = MOT_seq_selector(subset,seqs)
+        print(f'selected {len(seqs)} from {self.dataset_dir}')
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(MOTSynthTrain18d, self).__init__(train, query, gallery, **kwargs)
+
+class MOTSynthTrain18e(torchreid.data.ImageDataset):
+    dataset_dir = args.data
+
+    def __init__(self, root='', subset='train-18e', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        seqs = os.listdir(self.dataset_dir)
+        seqs.sort()
+
+        seqs = MOT_seq_selector(subset,seqs)
+        print(f'selected {len(seqs)} from {self.dataset_dir}')
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(MOTSynthTrain18e, self).__init__(train, query, gallery, **kwargs)
+
+class MOTSynthTrain18f(torchreid.data.ImageDataset):
+    dataset_dir = args.data
+
+    def __init__(self, root='', subset='train-18f', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        seqs = os.listdir(self.dataset_dir)
+        seqs.sort()
+
+        seqs = MOT_seq_selector(subset,seqs)
+        print(f'selected {len(seqs)} from {self.dataset_dir}')
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(MOTSynthTrain18f, self).__init__(train, query, gallery, **kwargs)
+
+class MOTSynthTrain18g(torchreid.data.ImageDataset):
+    dataset_dir = args.data
+
+    def __init__(self, root='', subset='train-18g', **kwargs):
+        train = []
+        query = []
+        gallery = []
+
+        seqs = os.listdir(self.dataset_dir)
+        seqs.sort()
+
+        seqs = MOT_seq_selector(subset,seqs)
+        print(f'selected {len(seqs)} from {self.dataset_dir}')
+
+        objind = 0
+        for seq in seqs:
+            objs = os.listdir(os.path.join(self.dataset_dir, seq))
+            objs.sort()
+            for obj in objs:
+                imgs = os.listdir(os.path.join(self.dataset_dir, seq, obj))
+                imgs.sort()
+
+                if len(imgs) > 2:
+                    q = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[q])
+                    entry = [img_path, objind, seqs.index(seq) + 100]
+                    query.append(entry)
+                    imgs.pop(q)
+
+                    g = random.randint(0, len(imgs) - 1)
+                    img_path = os.path.join(self.dataset_dir, seq, obj, imgs[g])
+                    entry = [img_path, objind, seqs.index(seq)]
+                    gallery.append(entry)
+                    imgs.pop(g)
+
+                for img in imgs:
+                    img_path = os.path.join(self.dataset_dir, seq, obj, img)
+                    entry = [img_path, objind, seqs.index(seq)]
+                    train.append(entry)
+                objind += 1
+        super(MOTSynthTrain18g, self).__init__(train, query, gallery, **kwargs)
 
 if __name__=='__main__':
     #import argparse
@@ -2593,8 +5715,10 @@ if __name__=='__main__':
     torchreid.data.register_image_dataset('VisDrone_reid_train25d', VisDroneTrain25d)
     torchreid.data.register_image_dataset('VisDrone_reid_train25e', VisDroneTrain25e)
     torchreid.data.register_image_dataset('VisDrone_reid_train25f', VisDroneTrain25f)
+    torchreid.data.register_image_dataset('VisDrone_reid_train30', VisDroneTrain30)
 
     torchreid.data.register_image_dataset('UAVDT_reid_test', UAVDTReIdTest)
+    torchreid.data.register_image_dataset('VisDrone_reid_test', VisDroneReIdTest)
 
     torchreid.data.register_image_dataset('AirSim_reid_train', AirSimReIdTrain)
     torchreid.data.register_image_dataset('AirSim_reid_train5a', AirSimReIdTrain5a)
@@ -2606,7 +5730,55 @@ if __name__=='__main__':
     torchreid.data.register_image_dataset('AirSim_reid_train20', AirSimReIdTrain20)
     torchreid.data.register_image_dataset('AirSim_reid_train25', AirSimReIdTrain25)
 
+    torchreid.data.register_image_dataset('MOT17_reid_train', MOT17Train)
+    torchreid.data.register_image_dataset('MOT17_reid_train3a', MOT17Train3a)
+    torchreid.data.register_image_dataset('MOT17_reid_train3b', MOT17Train3b)
+    torchreid.data.register_image_dataset('MOT17_reid_train3c', MOT17Train3c)
+    torchreid.data.register_image_dataset('MOT17_reid_train3d', MOT17Train3d)
+    torchreid.data.register_image_dataset('MOT17_reid_train3e', MOT17Train3e)
+    torchreid.data.register_image_dataset('MOT17_reid_train3f', MOT17Train3f)
+    torchreid.data.register_image_dataset('MOT17_reid_train3g', MOT17Train3g)
+    torchreid.data.register_image_dataset('MOT17_reid_train7a', MOT17Train7a)
+    torchreid.data.register_image_dataset('MOT17_reid_train7b', MOT17Train7b)
+    torchreid.data.register_image_dataset('MOT17_reid_train7c', MOT17Train7c)
+    torchreid.data.register_image_dataset('MOT17_reid_train14a', MOT17Train14a)
+    torchreid.data.register_image_dataset('MOT17_reid_train14b', MOT17Train14b)
+    torchreid.data.register_image_dataset('MOT17_reid_train14c', MOT17Train14c)
+    torchreid.data.register_image_dataset('MOT17_reid_train18a', MOT17Train18a)
+    torchreid.data.register_image_dataset('MOT17_reid_train18b', MOT17Train18b)
+    torchreid.data.register_image_dataset('MOT17_reid_train18c', MOT17Train18c)
+    torchreid.data.register_image_dataset('MOT17_reid_train18d', MOT17Train18d)
+    torchreid.data.register_image_dataset('MOT17_reid_train18e', MOT17Train18e)
+    torchreid.data.register_image_dataset('MOT17_reid_train18f', MOT17Train18f)
+    torchreid.data.register_image_dataset('MOT17_reid_train18g', MOT17Train18g)
+    torchreid.data.register_image_dataset('MOT17_reid_test', MOT17Test)
+
+    torchreid.data.register_image_dataset('MOTSynth_reid_train', MOTSynthTrain)
+    torchreid.data.register_image_dataset('MOTSynth_reid_train3a', MOTSynthTrain3a)
+    torchreid.data.register_image_dataset('MOTSynth_reid_train3b', MOTSynthTrain3b)
+    torchreid.data.register_image_dataset('MOTSynth_reid_train3c', MOTSynthTrain3c)
+    torchreid.data.register_image_dataset('MOTSynth_reid_train3d', MOTSynthTrain3d)
+    torchreid.data.register_image_dataset('MOTSynth_reid_train3e', MOTSynthTrain3e)
+    torchreid.data.register_image_dataset('MOTSynth_reid_train3f', MOTSynthTrain3f)
+    torchreid.data.register_image_dataset('MOTSynth_reid_train3g', MOTSynthTrain3g)
+    torchreid.data.register_image_dataset('MOTSynth_reid_train7a', MOTSynthTrain7a)
+    torchreid.data.register_image_dataset('MOTSynth_reid_train7b', MOTSynthTrain7b)
+    torchreid.data.register_image_dataset('MOTSynth_reid_train7c', MOTSynthTrain7c)
+    torchreid.data.register_image_dataset('MOTSynth_reid_train14a', MOTSynthTrain14a)
+    torchreid.data.register_image_dataset('MOTSynth_reid_train14b', MOTSynthTrain14b)
+    torchreid.data.register_image_dataset('MOTSynth_reid_train14c', MOTSynthTrain14c)
+    torchreid.data.register_image_dataset('MOTSynth_reid_train18a', MOTSynthTrain18a)
+    torchreid.data.register_image_dataset('MOTSynth_reid_train18b', MOTSynthTrain18b)
+    torchreid.data.register_image_dataset('MOTSynth_reid_train18c', MOTSynthTrain18c)
+    torchreid.data.register_image_dataset('MOTSynth_reid_train18d', MOTSynthTrain18d)
+    torchreid.data.register_image_dataset('MOTSynth_reid_train18e', MOTSynthTrain18e)
+    torchreid.data.register_image_dataset('MOTSynth_reid_train18f', MOTSynthTrain18f)
+    torchreid.data.register_image_dataset('MOTSynth_reid_train18g', MOTSynthTrain18g)
+    torchreid.data.register_image_dataset('MOTSynth_reid_test', MOTSynthTest)
+
+
     if args.dataset_class == 'UAVDT':
+        targets='UAVDT_reid_test'
         if args.mode == 'R30':
             sources = ['UAVDT_reid_train']
         elif args.mode == 'R30S15':
@@ -2654,6 +5826,7 @@ if __name__=='__main__':
         elif args.mode == 'R5fS25':
             sources = ['UAVDT_reid_train5f','AirSim_reid_train25']
     elif args.dataset_class == 'VisDrone':
+        targets='VisDrone_reid_test'
         if args.mode == 'R30':
             sources = ['VisDrone_reid_train']
         elif args.mode == 'R30S15':
@@ -2700,12 +5873,61 @@ if __name__=='__main__':
             sources = ['VisDrone_reid_train5e', 'AirSim_reid_train25']
         elif args.mode == 'R5fS25':
             sources = ['VisDrone_reid_train5f', 'AirSim_reid_train25']
-        
-        datamanager = torchreid.data.ImageDataManager(
+        elif args.mode == 'R30S0':
+            sources = ['VisDrone_reid_train30']
+    elif args.dataset_class == 'MOT':
+        targets = 'MOT17_reid_test'
+        if args.mode == 'R21':
+            sources = ['MOT17_reid_train']
+        elif args.mode == 'R21S21':
+            sources = ['MOT17_reid_train', 'MOTSynth_reid_train']
+        elif args.mode == 'R3aS18a':
+            sources = ['MOT17_reid_train3a', 'MOTSynth_reid_train18a']
+        elif args.mode == 'R3bS18b':
+            sources = ['MOT17_reid_train3b', 'MOTSynth_reid_train18b']
+        elif args.mode == 'R3cS18c':
+            sources = ['MOT17_reid_train3c', 'MOTSynth_reid_train18c']
+        elif args.mode == 'R3dS18d':
+            sources = ['MOT17_reid_train3d', 'MOTSynth_reid_train18d']
+        elif args.mode == 'R3eS18e':
+            sources = ['MOT17_reid_train3e', 'MOTSynth_reid_train18e']
+        elif args.mode == 'R3fS18f':
+            sources = ['MOT17_reid_train3f', 'MOTSynth_reid_train18f']
+        elif args.mode == 'R3gS18g':
+            sources = ['MOT17_reid_train3g', 'MOTSynth_reid_train18g']
+        elif args.mode == 'R7aS14a':
+            sources = ['MOT17_reid_train7a', 'MOTSynth_reid_train14a']
+        elif args.mode == 'R7bS14b':
+            sources = ['MOT17_reid_train7b', 'MOTSynth_reid_train14b']
+        elif args.mode == 'R7cS14c':
+            sources = ['MOT17_reid_train7c', 'MOTSynth_reid_train14c']
+        elif args.mode == 'R14aS7a':
+            sources = ['MOT17_reid_train14a', 'MOTSynth_reid_train7a']
+        elif args.mode == 'R14bS7b':
+            sources = ['MOT17_reid_train14b', 'MOTSynth_reid_train7b']
+        elif args.mode == 'R14cS7c':
+            sources = ['MOT17_reid_train14c', 'MOTSynth_reid_train7c']
+        elif args.mode == 'R18aS3a':
+            sources = ['MOT17_reid_train18a', 'MOTSynth_reid_train3a']
+        elif args.mode == 'R18bS3b':
+            sources = ['MOT17_reid_train18b', 'MOTSynth_reid_train3b']
+        elif args.mode == 'R18cS3c':
+            sources = ['MOT17_reid_train18c', 'MOTSynth_reid_train3c']
+        elif args.mode == 'R18dS3d':
+            sources = ['MOT17_reid_train18d', 'MOTSynth_reid_train3d']
+        elif args.mode == 'R18eS3e':
+            sources = ['MOT17_reid_train18e', 'MOTSynth_reid_train3e']
+        elif args.mode == 'R18fS3f':
+            sources = ['MOT17_reid_train18f', 'MOTSynth_reid_train3f']
+        elif args.mode == 'R18gS3g':
+            sources = ['MOT17_reid_train18g', 'MOTSynth_reid_train3g']
+
+    print(sources,targets)
+    datamanager = torchreid.data.ImageDataManager(
         root='reid-data',
         #sources=['UAVDT_reid_train','AirSim_reid_train'],
         sources=sources,
-        targets='UAVDT_reid_test'
+        targets=targets
     )
 
     print(f'Building model: ')
