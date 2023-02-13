@@ -113,6 +113,11 @@ if args.dataset_type=='UAVDT':
 elif args.dataset_type == 'VisDrone':
     seqs = ['uav0000009_03358_v', 'uav0000077_00720_v', 'uav0000119_02301_v', 'uav0000201_00000_v', 
         'uav0000249_00001_v', 'uav0000249_02688_v', 'uav0000297_02761_v', 'uav0000355_00001_v', 'uav0000370_00001_v']
+elif args.dataset_type == 'MOT-test':
+    seqs = os.listdir(os.path.join(args.dataset,'test'))
+elif args.dataset_type == 'MOT-train':
+    seqs = os.listdir(os.path.join(args.dataset,'train'))
+
 seqs.sort()
 for seq in seqs:
     tracker.reset()

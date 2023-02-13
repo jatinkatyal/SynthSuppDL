@@ -9,25 +9,26 @@ import matplotlib.pyplot as plt
 from matplotlib import patches
 
 class Images(Dataset):
-    def __init__(self,path,seq,dataset_type,transform=None):
-        #print(path,seq,dataset_type)
+    def __init__(self,path,seq,dataset_type):
         if dataset_type == 'UAVDT':
             seq_pattern = 'UAV-benchmark-M/'+seq
             annot_pattern = 'UAV-benchmark-MOTD_v1.0/GT/'+seq+'_gt.txt'
         elif dataset_type == 'VisDrone':
             seq_pattern = 'sequences/'+seq
             annot_pattern = 'annotations/'+seq+'.txt'
+        elif dataset_type == 'MOT-test':
+            seq_pattern = 'test/'+seq+'/img1'
+            annot_pattern = 'test/'+seq+'/det/det.txt'
+        elif dataset_type == 'MOT-train':
+            seq_pattern = 'train/'+seq+'/img1'
+            annot_pattern = 'train/'+seq+'/gt/gt.txt'
         self.path = path
         self.seq_path = os.path.join(self.path,seq_pattern)
         self.img_list = os.listdir(self.seq_path)
         self.img_list.sort()
-        self.transform = transform
 
         annotation_path = os.path.join(self.path,annot_pattern)
-        anots = np.loadtxt(annotation_path, delimiter=',')
-        #if dataset_type == 'VisDrone':
-        #    anots = anots[(anots[:,7]==4) | (anots[:,7]==5) | (anots[:,7]==6) | (anots[:,7]==9)] # Filtering vehicles
-        self.annotations = anots
+        self.annotations = np.loadtxt(annotation_path, delimiter=',')
 
     def __len__(self):
         return len(self.img_list)
@@ -36,10 +37,6 @@ class Images(Dataset):
         img_path = os.path.join(self.seq_path,self.img_list[item])
         img = read_image(img_path)/255
         img = img.type(torch.DoubleTensor)
-        if self.transform:
-            shape_og = img.shape
-            img = self.transform(img)
-            shape_new = img.shape
 
         anots_ith_frame = self.annotations[self.annotations[:, 0] == item+1]
         bboxes = [
@@ -50,13 +47,6 @@ class Images(Dataset):
         ]
         bboxes = np.array(bboxes)
         bboxes = torch.tensor(bboxes).T
-
-        print(bboxes.shape)
-        if self.transform:
-            c_og, y_og, x_og = shape_og
-            c_new,y_new,x_new = shape_new
-            print(torch.tensor([x_new/x_og,y_new/y_og,x_new/x_og,y_new/y_og]).shape)
-            bboxes = bboxes*torch.tensor([x_new/x_og,y_new/y_og,x_new/x_og,y_new/y_og])
         return img, bboxes
 
 class UAVDTSeq(Dataset):
@@ -160,6 +150,7 @@ if __name__ == '__main__':
     import random
     j = random.randint(0, len(dataset))
     img,target = dataset[j]
+    print(img[0].shape)
     plot(img,target['boxes'])
 
 
